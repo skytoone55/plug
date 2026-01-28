@@ -6,6 +6,7 @@ import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { equilibrageSchema, type EquilibrageFormData, toNumber } from '@/lib/validations'
 import type { RapportEquilibrage, MesureDebit, MesureTemperature } from '@/lib/types'
+import { FICHES_CEE, ZONES_CLIMATIQUES, LOCALISATIONS_VANNES, DIAMETRES_NOMINAUX, REFERENCES_VANNES } from '@/lib/constants/plug2drive'
 import PhotoUpload from './PhotoUpload'
 import SignatureField from './SignatureField'
 import { Loader2, Plus, Trash2, ArrowLeft } from 'lucide-react'
@@ -26,15 +27,24 @@ export default function EquilibrageForm({ rapport, mode }: EquilibrageFormProps)
   const [photosSite, setPhotosSite] = useState<string[]>(rapport?.photos_site || rapport?.photos_equipement || [])
   const [photosVannes, setPhotosVannes] = useState<string[]>(rapport?.photos_vannes || [])
   const [photosAutres, setPhotosAutres] = useState<string[]>(rapport?.photos_autres || rapport?.photos_intervention || [])
+  const [photoFacade, setPhotoFacade] = useState<string | null>(rapport?.photo_facade || null)
+  const [photoCirulateur, setPhotoCirulateur] = useState<string | null>(rapport?.photo_circulateur || null)
   const [signatureTech, setSignatureTech] = useState<string | null>(rapport?.signature_technicien || null)
   const [signatureClient, setSignatureClient] = useState<string | null>(rapport?.signature_client || null)
   const [logoUrl, setLogoUrl] = useState<string | null>(rapport?.prestataire_logo_url || null)
 
-  const { register, handleSubmit, control } = useForm<EquilibrageFormData>({
+  const { register, handleSubmit, control, watch } = useForm<EquilibrageFormData>({
     resolver: zodResolver(equilibrageSchema),
     defaultValues: {
+      // Numérotation & références (CDC)
+      numero_dossier: rapport?.numero_dossier || '',
+      reference_devis: rapport?.reference_devis || '',
+      dossier_pixel: rapport?.dossier_pixel || '',
+      // Fiche & Type
       fiche: rapport?.fiche || '',
       type_installation: rapport?.type_installation || '',
+      intitule_cee: (rapport?.intitule_cee as 'BAR-SE-104' | 'BAT-SE-103') || 'BAR-SE-104',
+      // Bénéficiaire
       beneficiaire_nom: rapport?.beneficiaire_nom || '',
       beneficiaire_adresse: rapport?.beneficiaire_adresse || '',
       beneficiaire_code_postal: rapport?.beneficiaire_code_postal || '',
@@ -42,6 +52,7 @@ export default function EquilibrageForm({ rapport, mode }: EquilibrageFormProps)
       beneficiaire_telephone: rapport?.beneficiaire_telephone || '',
       beneficiaire_email: rapport?.beneficiaire_email || '',
       siren_beneficiaire: rapport?.siren_beneficiaire || '',
+      // Prestataire
       prestataire_nom: rapport?.prestataire_nom || '',
       prestataire_adresse: rapport?.prestataire_adresse || '',
       prestataire_code_postal: rapport?.prestataire_code_postal || '',
@@ -49,30 +60,57 @@ export default function EquilibrageForm({ rapport, mode }: EquilibrageFormProps)
       prestataire_telephone: rapport?.prestataire_telephone || '',
       prestataire_email: rapport?.prestataire_email || '',
       siren_prestataire: rapport?.siren_prestataire || '',
+      // Intervenant
       intervenant_nom: rapport?.intervenant_nom || '',
       siret_intervenant: rapport?.siret_intervenant || '',
+      // Site
       site_adresse: rapport?.site_adresse || '',
+      adresse_ligne2: rapport?.adresse_ligne2 || '',
       site_code_postal: rapport?.site_code_postal || '',
       site_ville: rapport?.site_ville || '',
       site_ref_cadastrale: rapport?.site_ref_cadastrale || '',
+      reference_cadastrale: rapport?.reference_cadastrale || '',
       site_nb_batiments: rapport?.site_nb_batiments != null ? String(rapport.site_nb_batiments) : '',
       site_nb_niveaux: rapport?.site_nb_niveaux != null ? String(rapport.site_nb_niveaux) : '',
       site_nb_lots: rapport?.site_nb_lots != null ? String(rapport.site_nb_lots) : '',
+      nombre_lots: rapport?.nombre_lots != null ? String(rapport.nombre_lots) : '',
       surface_chauffee: rapport?.surface_chauffee != null ? String(rapport.surface_chauffee) : '',
+      surface_chauffee_m2: rapport?.surface_chauffee_m2 != null ? String(rapport.surface_chauffee_m2) : '',
+      zone_climatique: rapport?.zone_climatique || undefined,
+      batiment: rapport?.batiment || '',
+      escalier: rapport?.escalier || '',
+      etage: rapport?.etage || '',
+      // Gardien (CDC)
+      gardien_nom: rapport?.gardien_nom || '',
+      gardien_tel: rapport?.gardien_tel || '',
+      // Technicien
       technicien_nom: rapport?.technicien_nom || '',
       technicien_prenom: rapport?.technicien_prenom || '',
       technicien_date_intervention: rapport?.technicien_date_intervention || '',
+      // Description & Méthodologie
       description_reseau: rapport?.description_reseau || '',
       releves_site: rapport?.releves_site || '',
       considerations: rapport?.considerations || '',
       methode_equilibrage: rapport?.methode_equilibrage || '',
+      // Installation
       nom_equipement: rapport?.nom_equipement || '',
       commentaire_chaufferie: rapport?.commentaire_chaufferie || '',
+      type_circuit: rapport?.type_circuit || 'bitube',
+      nb_colonnes_total: rapport?.nb_colonnes_total != null ? String(rapport.nb_colonnes_total) : '',
+      organe_reglage_type: rapport?.organe_reglage_type || '',
+      commentaire_circulateur: rapport?.commentaire_circulateur || '',
+      // Température
       temperature_exterieure: rapport?.temperature_exterieure || '',
+      // Tableaux dynamiques
       tab_mesure_debit: rapport?.tab_mesure_debit || [],
       tab_mesure_temperature: rapport?.tab_mesure_temperature || [],
+      // Statut
+      statut: rapport?.statut || 'brouillon',
     },
   })
+
+  // Watch pour afficher conditionnellement les champs selon fiche CEE
+  const intituleCee = watch('intitule_cee')
 
   const { fields: debitFields, append: appendDebit, remove: removeDebit } = useFieldArray({
     control,
@@ -137,12 +175,18 @@ export default function EquilibrageForm({ rapport, mode }: EquilibrageFormProps)
     try {
       const payload = {
         ...data,
+        // Conversions numériques
         site_nb_batiments: toNumber(data.site_nb_batiments),
         site_nb_niveaux: toNumber(data.site_nb_niveaux),
         site_nb_lots: toNumber(data.site_nb_lots),
+        nombre_lots: toNumber(data.nombre_lots),
         surface_chauffee: toNumber(data.surface_chauffee),
+        surface_chauffee_m2: toNumber(data.surface_chauffee_m2),
+        nb_colonnes_total: toNumber(data.nb_colonnes_total),
+        // Tableaux dynamiques
         tab_mesure_debit: data.tab_mesure_debit || [],
         tab_mesure_temperature: data.tab_mesure_temperature || [],
+        // Photos
         prestataire_logo_url: logoUrl,
         photos_chaufferie: photosChaufferie,
         photos_site: photosSite,
@@ -150,6 +194,9 @@ export default function EquilibrageForm({ rapport, mode }: EquilibrageFormProps)
         photos_autres: photosAutres,
         photos_equipement: photosSite,
         photos_intervention: photosAutres,
+        photo_facade: photoFacade,
+        photo_circulateur: photoCirulateur,
+        // Signatures
         signature_technicien: signatureTech,
         signature_client: signatureClient,
         ...(mode === 'edit' ? { id: rapport!.id } : {}),
@@ -188,28 +235,74 @@ export default function EquilibrageForm({ rapport, mode }: EquilibrageFormProps)
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
-        {/* Section 1 : Informations Générales */}
+        {/* Section 0 : Numérotation & Fiche CEE */}
         <div className="bg-card rounded-xl border p-6 space-y-6">
-          <h3 className="font-semibold text-lg border-b pb-2">Informations Générales</h3>
+          <h3 className="font-semibold text-lg border-b pb-2">Références Dossier</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1.5">N° Dossier</label>
+              <input {...register('numero_dossier')} className={inputClass} placeholder="PLUG-2026-000001" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Référence devis</label>
+              <input {...register('reference_devis')} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Dossier Pixel</label>
+              <input {...register('dossier_pixel')} className={inputClass} />
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1.5">Fiche</label>
-              <select {...register('fiche')} className={inputClass}>
-                <option value="">Sélectionner...</option>
-                <option value="BAR-SE-103">BAR-SE-103</option>
-                <option value="BAR-SE-104">BAR-SE-104</option>
+              <label className="block text-sm font-medium mb-1.5">Fiche CEE <span className="text-destructive">*</span></label>
+              <select {...register('intitule_cee')} className={inputClass}>
+                <option value="BAR-SE-104">{FICHES_CEE.EQUILIBRAGE_RESIDENTIEL} - Résidentiel</option>
+                <option value="BAT-SE-103">{FICHES_CEE.EQUILIBRAGE_TERTIAIRE} - Tertiaire</option>
               </select>
+              <p className="text-xs text-muted-foreground mt-1">
+                {intituleCee === 'BAT-SE-103' ? 'Tertiaire : surface chauffée obligatoire' : 'Résidentiel : nombre de lots obligatoire'}
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1.5">Type d&apos;installation</label>
               <select {...register('type_installation')} className={inputClass}>
                 <option value="">Sélectionner...</option>
-                <option value="Chauffage à eau chaude">Chauffage à eau chaude</option>
-                <option value="Climatisation">Climatisation</option>
+                <option value="Chaudière condensation">Chaudière condensation</option>
+                <option value="Chaudière hors condensation">Chaudière hors condensation</option>
+                <option value="Réseau de chaleur">Réseau de chaleur</option>
               </select>
             </div>
           </div>
+
+          {/* Champs conditionnels selon fiche CEE */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
+            {intituleCee === 'BAR-SE-104' ? (
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Nombre de lots <span className="text-destructive">*</span></label>
+                <input type="number" {...register('nombre_lots')} className={inputClass} placeholder="Obligatoire pour BAR-SE-104" />
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Surface chauffée (m²) <span className="text-destructive">*</span></label>
+                <input type="number" {...register('surface_chauffee_m2')} className={inputClass} placeholder="Obligatoire pour BAT-SE-103" />
+              </div>
+            )}
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Zone climatique</label>
+              <select {...register('zone_climatique')} className={inputClass}>
+                <option value="">Sélectionner...</option>
+                {ZONES_CLIMATIQUES.map(z => (
+                  <option key={z} value={z}>{z}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 1 : Informations Générales */}
+        <div className="bg-card rounded-xl border p-6 space-y-6">
+          <h3 className="font-semibold text-lg border-b pb-2">Informations Générales</h3>
 
           {/* Bénéficiaire */}
           <div className="space-y-3">
@@ -314,6 +407,10 @@ export default function EquilibrageForm({ rapport, mode }: EquilibrageFormProps)
                 <label className="block text-sm font-medium mb-1.5">Site (adresse)</label>
                 <input {...register('site_adresse')} className={inputClass} />
               </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1.5">Adresse (ligne 2)</label>
+                <input {...register('adresse_ligne2')} className={inputClass} placeholder="Complément d'adresse" />
+              </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Code postal</label>
                 <input {...register('site_code_postal')} className={inputClass} />
@@ -323,12 +420,51 @@ export default function EquilibrageForm({ rapport, mode }: EquilibrageFormProps)
                 <input {...register('site_ville')} className={inputClass} />
               </div>
               <div>
+                <label className="block text-sm font-medium mb-1.5">Référence cadastrale</label>
+                <input {...register('reference_cadastrale')} className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Nb de bâtiments</label>
+                <input type="number" {...register('site_nb_batiments')} className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Nb de niveaux</label>
+                <input type="number" {...register('site_nb_niveaux')} className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Nb de lots</label>
+                <input type="number" {...register('site_nb_lots')} className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Bâtiment</label>
+                <input {...register('batiment')} className={inputClass} placeholder="A, B, C..." />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Escalier</label>
+                <input {...register('escalier')} className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Étage</label>
+                <input {...register('etage')} className={inputClass} />
+              </div>
+              <div>
                 <label className="block text-sm font-medium mb-1.5">Surface chauffée (m²)</label>
                 <input type="number" {...register('surface_chauffee')} className={inputClass} />
               </div>
+            </div>
+          </div>
+
+          {/* Contact Gardien */}
+          <div className="space-y-3">
+            <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Contact Gardien</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1.5">Nombre de lots</label>
-                <input type="number" {...register('site_nb_lots')} className={inputClass} />
+                <label className="block text-sm font-medium mb-1.5">Nom du gardien</label>
+                <input {...register('gardien_nom')} className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Téléphone gardien</label>
+                <input {...register('gardien_tel')} className={inputClass} placeholder="06 00 00 00 00" />
               </div>
             </div>
           </div>
@@ -374,18 +510,89 @@ export default function EquilibrageForm({ rapport, mode }: EquilibrageFormProps)
           </div>
         </div>
 
-        {/* Section 3 : Équipements (Chaufferie) */}
-        <div className="bg-card rounded-xl border p-6 space-y-4">
-          <h3 className="font-semibold text-lg border-b pb-2">Équipements (Chaufferie)</h3>
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Nom équipement</label>
-            <input {...register('nom_equipement')} className={inputClass} placeholder="Nom de l'équipement" />
+        {/* Section 3 : Installation & Équipements */}
+        <div className="bg-card rounded-xl border p-6 space-y-6">
+          <h3 className="font-semibold text-lg border-b pb-2">Installation &amp; Équipements</h3>
+
+          {/* Données Installation */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Type de circuit</label>
+              <select {...register('type_circuit')} className={inputClass}>
+                <option value="bitube">Bitube</option>
+                <option value="monotube">Monotube</option>
+                <option value="pieuvre">Pieuvre</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Nb colonnes total</label>
+              <input type="number" {...register('nb_colonnes_total')} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Type organe de réglage</label>
+              <input {...register('organe_reglage_type')} className={inputClass} placeholder="STAD, HYDROCONTROL..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Température extérieure</label>
+              <input {...register('temperature_exterieure')} className={inputClass} placeholder="°C" />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Commentaire chaufferie</label>
-            <textarea {...register('commentaire_chaufferie')} rows={3} className={inputClass} placeholder="Commentaires sur la chaufferie..." />
+
+          {/* Équipement Chaufferie */}
+          <div className="space-y-4 pt-4 border-t">
+            <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Chaufferie</h4>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Nom équipement</label>
+              <input {...register('nom_equipement')} className={inputClass} placeholder="Nom de l'équipement" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Commentaire chaufferie</label>
+              <textarea {...register('commentaire_chaufferie')} rows={3} className={inputClass} placeholder="Commentaires sur la chaufferie..." />
+            </div>
+            <PhotoUpload photos={photosChaufferie} onChange={setPhotosChaufferie} label="Photos chaufferie" />
           </div>
-          <PhotoUpload photos={photosChaufferie} onChange={setPhotosChaufferie} label="Photos équipement" />
+
+          {/* Circulateur */}
+          <div className="space-y-4 pt-4 border-t">
+            <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Circulateur</h4>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Commentaire circulateur</label>
+              <textarea {...register('commentaire_circulateur')} rows={2} className={inputClass} placeholder="Observations sur le circulateur..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Photo circulateur</label>
+              <div className="flex items-start gap-4">
+                {photoCirulateur && (
+                  <div className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={photoCirulateur} alt="Circulateur" className="w-32 h-32 object-cover rounded-lg border" />
+                    <button
+                      type="button"
+                      onClick={() => setPhotoCirulateur(null)}
+                      className="absolute -top-2 -right-2 p-1 bg-destructive text-white rounded-full"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    const formData = new FormData()
+                    formData.append('file', file)
+                    formData.append('folder', 'equilibrage/circulateur')
+                    const res = await fetch('/api/upload', { method: 'POST', body: formData })
+                    const data = await res.json()
+                    if (data.url) setPhotoCirulateur(data.url)
+                  }}
+                  className="text-sm"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Section 4 : Tableau d'Équilibrage */}
@@ -505,6 +712,53 @@ export default function EquilibrageForm({ rapport, mode }: EquilibrageFormProps)
         {/* Section 6 : Photos */}
         <div className="bg-card rounded-xl border p-6 space-y-6">
           <h3 className="font-semibold text-lg border-b pb-2">Photos</h3>
+
+          {/* Photo Façade - Obligatoire CDC */}
+          <div className="p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
+            <label className="block text-sm font-medium mb-2">
+              Photo façade <span className="text-destructive">* (obligatoire)</span>
+            </label>
+            <div className="flex items-start gap-4">
+              {photoFacade ? (
+                <div className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={photoFacade} alt="Façade" className="w-48 h-36 object-cover rounded-lg border" />
+                  <button
+                    type="button"
+                    onClick={() => setPhotoFacade(null)}
+                    className="absolute -top-2 -right-2 p-1 bg-destructive text-white rounded-full"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <div className="w-48 h-36 border-2 border-dashed border-amber-400 rounded-lg flex items-center justify-center text-amber-600 text-sm">
+                  Aucune photo
+                </div>
+              )}
+              <div className="flex-1">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    const formData = new FormData()
+                    formData.append('file', file)
+                    formData.append('folder', 'equilibrage/facade')
+                    const res = await fetch('/api/upload', { method: 'POST', body: formData })
+                    const data = await res.json()
+                    if (data.url) setPhotoFacade(data.url)
+                  }}
+                  className="text-sm"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Photo de la façade du bâtiment - requise pour la conformité CEE
+                </p>
+              </div>
+            </div>
+          </div>
+
           <PhotoUpload photos={photosSite} onChange={setPhotosSite} label="Photos du site" />
           <PhotoUpload photos={photosVannes} onChange={setPhotosVannes} label="Photos des vannes" />
           <PhotoUpload photos={photosAutres} onChange={setPhotosAutres} label="Autres photos" />
