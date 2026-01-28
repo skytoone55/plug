@@ -1,5 +1,5 @@
 // ============================================
-// TYPES PLUG2DRIVE
+// TYPES PLUG2DRIVE — Identiques à l'original
 // ============================================
 
 // --- Utilisateur ---
@@ -17,6 +17,8 @@ export interface UserProfile {
 export interface MesureDebit {
   id: string
   batimentNo: string
+  batimentNom: string
+  nbNiveau: string
   localisation: string
   reperage: string
   reference: string
@@ -35,12 +37,19 @@ export interface MesureTemperature {
   batimentNom: string
   niveau: string
   temperatureMesuree: string
+  temperatureExterieure: string
+  date: string
+  heure: string
 }
 
 // --- Rapport Équilibrage ---
 export interface RapportEquilibrage {
   id: string
   user_id: string | null
+
+  // Fiche & Type
+  fiche: string | null
+  type_installation: string | null
 
   // Bénéficiaire
   beneficiaire_nom: string | null
@@ -49,6 +58,7 @@ export interface RapportEquilibrage {
   beneficiaire_ville: string | null
   beneficiaire_telephone: string | null
   beneficiaire_email: string | null
+  siren_beneficiaire: string | null
 
   // Prestataire
   prestataire_nom: string | null
@@ -58,6 +68,11 @@ export interface RapportEquilibrage {
   prestataire_telephone: string | null
   prestataire_email: string | null
   prestataire_logo_url: string | null
+  siren_prestataire: string | null
+
+  // Intervenant
+  intervenant_nom: string | null
+  siret_intervenant: string | null
 
   // Site
   site_adresse: string | null
@@ -67,25 +82,36 @@ export interface RapportEquilibrage {
   site_nb_batiments: number | null
   site_nb_niveaux: number | null
   site_nb_lots: number | null
+  surface_chauffee: number | null
 
   // Technicien
   technicien_nom: string | null
   technicien_prenom: string | null
   technicien_date_intervention: string | null
 
-  // Description
+  // Description & Méthodologie
   description_reseau: string | null
+  releves_site: string | null
+  considerations: string | null
   methode_equilibrage: string | null
 
   // Installation (conditionnel)
+  nom_equipement: string | null
   commentaire_chaufferie: string | null
   photos_chaufferie: string[]
+
+  // Température extérieure globale
+  temperature_exterieure: string | null
 
   // Tableaux dynamiques
   tab_mesure_debit: MesureDebit[]
   tab_mesure_temperature: MesureTemperature[]
 
-  // Photos
+  // Photos (3 catégories comme l'original)
+  photos_site: string[]
+  photos_vannes: string[]
+  photos_autres: string[]
+  // Legacy columns (backward compat)
   photos_equipement: string[]
   photos_intervention: string[]
 

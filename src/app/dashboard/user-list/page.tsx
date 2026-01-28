@@ -1,10 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import { Plus, UserPlus } from 'lucide-react'
 
 export default async function UserListPage() {
-  const supabase = await createClient()
-  const { data: users } = await supabase
+  const { data: users } = await supabaseAdmin
     .from('user_profiles')
     .select('*')
     .order('created_at', { ascending: false })

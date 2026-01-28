@@ -1,11 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 import { notFound } from 'next/navigation'
 import EquilibrageForm from '@/components/forms/EquilibrageForm'
 
 export default async function RapportEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createClient()
-  const { data: rapport } = await supabase
+  const { data: rapport } = await supabaseAdmin
     .from('rapports_equilibrage')
     .select('*')
     .eq('id', id)

@@ -1,8 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 import { FileText, Droplets, Users, TrendingUp } from 'lucide-react'
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
+  // Use admin client to bypass RLS
+  const supabase = supabaseAdmin
 
   // Fetch counts
   const [equilibrageRes, desembouageRes, usersRes] = await Promise.all([

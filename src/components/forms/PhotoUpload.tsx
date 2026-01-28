@@ -2,12 +2,10 @@
 
 import { useState, useRef } from 'react'
 import { Upload, X, Image as ImageIcon } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 
 interface PhotoUploadProps {
   photos: string[]
   onChange: (photos: string[]) => void
-  bucket?: string
   folder?: string
   label?: string
   maxPhotos?: number
@@ -16,7 +14,6 @@ interface PhotoUploadProps {
 export default function PhotoUpload({
   photos,
   onChange,
-  bucket = 'photos',
   folder = 'uploads',
   label = 'Photos',
   maxPhotos = 20,
@@ -29,29 +26,30 @@ export default function PhotoUpload({
     if (!files || files.length === 0) return
 
     setUploading(true)
-    const supabase = createClient()
     const newPhotos: string[] = []
 
     for (const file of Array.from(files)) {
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('folder', folder)
 
-      const { error } = await supabase.storage
-        .from(bucket)
-        .upload(fileName, file)
-
-      if (!error) {
-        const { data: urlData } = supabase.storage
-          .from(bucket)
-          .getPublicUrl(fileName)
-        newPhotos.push(urlData.publicUrl)
+      try {
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        })
+        const data = await res.json()
+        if (data.url) {
+          newPhotos.push(data.url)
+        }
+      } catch (err) {
+        console.error('Upload error:', err)
       }
     }
 
     onChange([...photos, ...newPhotos])
     setUploading(false)
 
-    // Reset input
     if (inputRef.current) {
       inputRef.current.value = ''
     }
@@ -66,7 +64,6 @@ export default function PhotoUpload({
     <div className="space-y-3">
       <label className="block text-sm font-medium">{label}</label>
 
-      {/* Photo Grid */}
       {photos.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {photos.map((url, index) => (
@@ -89,7 +86,6 @@ export default function PhotoUpload({
         </div>
       )}
 
-      {/* Upload Button */}
       {photos.length < maxPhotos && (
         <div
           onClick={() => inputRef.current?.click()}

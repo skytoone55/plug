@@ -1,11 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import { Plus, Droplets, Eye, Pencil } from 'lucide-react'
 import DeleteRapportButton from '@/components/dashboard/DeleteRapportButton'
 
 export default async function DesembouageListPage() {
-  const supabase = await createClient()
-  const { data: rapports } = await supabase
+  const { data: rapports } = await supabaseAdmin
     .from('rapports_desembouage')
     .select('*')
     .order('created_at', { ascending: false })

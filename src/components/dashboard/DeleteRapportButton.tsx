@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Trash2, Loader2 } from 'lucide-react'
 
 interface DeleteRapportButtonProps {
@@ -18,10 +17,22 @@ export default function DeleteRapportButton({ id, table }: DeleteRapportButtonPr
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce rapport ?')) return
 
     setLoading(true)
-    const supabase = createClient()
-    await supabase.from(table).delete().eq('id', id)
-    router.refresh()
-    setLoading(false)
+    try {
+      const endpoint = table === 'rapports_equilibrage'
+        ? '/api/rapports/equilibrage'
+        : '/api/rapports/desembouage'
+
+      await fetch(endpoint, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      router.refresh()
+    } catch (err) {
+      console.error('Delete error:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

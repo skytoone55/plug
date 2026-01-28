@@ -19,10 +19,12 @@ export const userCreateSchema = z.object({
 
 export type UserCreateFormData = z.infer<typeof userCreateSchema>
 
-// --- Mesure Débit ---
+// --- Mesure Débit (avec champs identiques à l'original) ---
 export const mesureDebitSchema = z.object({
   id: z.string(),
   batimentNo: z.string(),
+  batimentNom: z.string(),
+  nbNiveau: z.string(),
   localisation: z.string(),
   reperage: z.string(),
   reference: z.string(),
@@ -34,18 +36,24 @@ export const mesureDebitSchema = z.object({
   conformite: z.enum(['C', 'NC', 'NE']),
 })
 
-// --- Mesure Température ---
+// --- Mesure Température (avec champs identiques à l'original) ---
 export const mesureTemperatureSchema = z.object({
   id: z.string(),
   batimentNo: z.string(),
   batimentNom: z.string(),
   niveau: z.string(),
   temperatureMesuree: z.string(),
+  temperatureExterieure: z.string(),
+  date: z.string(),
+  heure: z.string(),
 })
 
-// --- Rapport Équilibrage ---
-// All number fields are stored as strings in the form and converted on submit
+// --- Rapport Équilibrage (tous les champs de l'original) ---
 export const equilibrageSchema = z.object({
+  // Fiche & Type
+  fiche: z.string().optional(),
+  type_installation: z.string().optional(),
+
   // Bénéficiaire
   beneficiaire_nom: z.string().optional(),
   beneficiaire_adresse: z.string().optional(),
@@ -53,6 +61,7 @@ export const equilibrageSchema = z.object({
   beneficiaire_ville: z.string().optional(),
   beneficiaire_telephone: z.string().optional(),
   beneficiaire_email: z.string().optional(),
+  siren_beneficiaire: z.string().optional(),
 
   // Prestataire
   prestataire_nom: z.string().optional(),
@@ -61,6 +70,11 @@ export const equilibrageSchema = z.object({
   prestataire_ville: z.string().optional(),
   prestataire_telephone: z.string().optional(),
   prestataire_email: z.string().optional(),
+  siren_prestataire: z.string().optional(),
+
+  // Intervenant
+  intervenant_nom: z.string().optional(),
+  siret_intervenant: z.string().optional(),
 
   // Site
   site_adresse: z.string().optional(),
@@ -70,18 +84,25 @@ export const equilibrageSchema = z.object({
   site_nb_batiments: z.string().optional(),
   site_nb_niveaux: z.string().optional(),
   site_nb_lots: z.string().optional(),
+  surface_chauffee: z.string().optional(),
 
   // Technicien
   technicien_nom: z.string().optional(),
   technicien_prenom: z.string().optional(),
   technicien_date_intervention: z.string().optional(),
 
-  // Description
+  // Description & Méthodologie
   description_reseau: z.string().optional(),
+  releves_site: z.string().optional(),
+  considerations: z.string().optional(),
   methode_equilibrage: z.string().optional(),
 
   // Installation
+  nom_equipement: z.string().optional(),
   commentaire_chaufferie: z.string().optional(),
+
+  // Température extérieure globale
+  temperature_exterieure: z.string().optional(),
 
   // Tableaux dynamiques
   tab_mesure_debit: z.array(mesureDebitSchema).optional(),
