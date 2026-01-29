@@ -15,7 +15,7 @@ export default function UserCreatePage() {
 
   const { register, handleSubmit, formState: { errors } } = useForm<UserCreateFormData>({
     resolver: zodResolver(userCreateSchema),
-    defaultValues: { role: 'user' },
+    defaultValues: { role: 'installateur' },
   })
 
   const onSubmit = async (data: UserCreateFormData) => {
@@ -102,7 +102,7 @@ export default function UserCreatePage() {
               {...register('role')}
               className="w-full px-3 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
-              <option value="user">Utilisateur</option>
+              <option value="installateur">Installateur</option>
               <option value="technicien">Technicien</option>
               <option value="admin">Administrateur</option>
             </select>

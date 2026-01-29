@@ -14,7 +14,7 @@ export const userCreateSchema = z.object({
   password: z.string().min(6, 'Mot de passe trop court'),
   nom: z.string().min(1, 'Nom requis'),
   prenom: z.string().min(1, 'Prénom requis'),
-  role: z.enum(['admin', 'user', 'technicien']),
+  role: z.enum(['admin', 'installateur', 'technicien']),
 })
 
 export type UserCreateFormData = z.infer<typeof userCreateSchema>

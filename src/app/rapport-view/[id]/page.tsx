@@ -2,6 +2,8 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 import { notFound } from 'next/navigation'
 import EquilibrageReport from '@/components/rapports/EquilibrageReport'
 
+export const dynamic = 'force-dynamic'
+
 export default async function RapportViewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { data: rapport } = await supabaseAdmin

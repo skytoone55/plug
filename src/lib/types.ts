@@ -2,15 +2,178 @@
 // TYPES PLUG2DRIVE — Identiques à l'original
 // ============================================
 
+// --- Rôles ---
+export type Role = 'admin' | 'installateur' | 'technicien'
+
 // --- Utilisateur ---
 export interface UserProfile {
   id: string
   email: string
   nom: string | null
   prenom: string | null
-  role: 'admin' | 'user' | 'technicien'
+  role: Role
+  installateur_id: string | null
+  technicien_id: string | null
   created_at: string
   updated_at: string
+}
+
+// --- Installateur (société partenaire) ---
+export interface Installateur {
+  id: string
+  nom: string
+  siret: string | null
+  siren: string | null
+  adresse: string | null
+  code_postal: string | null
+  ville: string | null
+  telephone: string | null
+  email: string | null
+  logo_url: string | null
+  certification: string | null
+  actif: boolean
+  created_at: string
+  updated_at: string
+}
+
+// --- Client Final (syndic, bailleur, copro) ---
+export interface ClientFinal {
+  id: string
+  installateur_id: string | null
+  type: 'syndic' | 'bailleur' | 'copropriete' | 'particulier' | null
+  nom: string
+  adresse: string | null
+  code_postal: string | null
+  ville: string | null
+  telephone: string | null
+  email: string | null
+  contact_nom: string | null
+  contact_tel: string | null
+  notes: string | null
+  actif: boolean
+  created_at: string
+  updated_at: string
+}
+
+// --- Bâtiment ---
+export interface Batiment {
+  id: string
+  client_final_id: string | null
+  nom: string
+  adresse: string | null
+  adresse_ligne2: string | null
+  code_postal: string | null
+  ville: string | null
+  reference_cadastrale: string | null
+  zone_climatique: 'H1' | 'H2' | 'H3' | null
+  nb_appartements: number | null
+  nb_batiments: number | null
+  nb_etages: number | null
+  annee_construction: number | null
+  type_chauffage: string | null
+  nature_reseau: 'Acier' | 'Cuivre' | 'Multicouche' | 'Synthetique' | null
+  puissance_nominale_kw: number | null
+  gardien_nom: string | null
+  gardien_tel: string | null
+  acces_info: string | null
+  actif: boolean
+  created_at: string
+  updated_at: string
+}
+
+// --- Technicien ---
+export interface Technicien {
+  id: string
+  user_id: string | null
+  installateur_id: string | null
+  nom: string
+  prenom: string | null
+  telephone: string | null
+  email: string | null
+  signature_url: string | null
+  certifications: string[]
+  actif: boolean
+  created_at: string
+  updated_at: string
+}
+
+// --- Chantier (site d'intervention d'un client) ---
+export interface Chantier {
+  id: string
+  client_id: string | null
+  nom: string
+  adresse: string | null
+  adresse_complement: string | null
+  code_postal: string | null
+  ville: string | null
+  reference_cadastrale: string | null
+  zone_climatique: 'H1' | 'H2' | 'H3' | null
+  nb_appartements: number | null
+  nb_batiments: number | null
+  nb_etages: number | null
+  annee_construction: number | null
+  type_chauffage: string | null
+  nature_reseau: 'Acier' | 'Cuivre' | 'Multicouche' | 'Synthetique' | null
+  puissance_nominale_kw: number | null
+  gardien_nom: string | null
+  gardien_tel: string | null
+  acces_info: string | null
+  digicode: string | null
+  actif: boolean
+  created_at: string
+  updated_at: string
+}
+
+// --- Intervention (demande -> planification -> exécution) ---
+export type StatutIntervention = 'demande' | 'planifiee' | 'en_cours' | 'terminee' | 'annulee' | 'facturee' | 'payee'
+export type PrioriteIntervention = 'basse' | 'normale' | 'haute' | 'urgente'
+
+export interface Intervention {
+  id: string
+  chantier_id: string | null
+  technicien_id: string | null
+  demandeur_id: string | null
+  numero_dossier: string | null
+  type: 'equilibrage' | 'desembouage' | 'maintenance'
+
+  // Dates
+  date_demande: string | null
+  date_planifiee: string | null
+  heure_debut: string | null
+  heure_fin: string | null
+  date_intervention: string | null
+
+  // Workflow
+  statut: StatutIntervention
+  priorite: PrioriteIntervention
+
+  // Commentaires
+  commentaire_installateur: string | null
+  commentaire_admin: string | null
+  notes: string | null
+
+  // Facturation
+  reference_devis: string | null
+  dossier_pixel: string | null
+  montant_ht: number | null
+
+  created_at: string
+  updated_at: string
+}
+
+// --- Tables de référence ---
+export interface DnDiametre {
+  id: number
+  dn: string
+  diametre_int_mm: number | null
+  ordre: number | null
+}
+
+export interface LocalisationType {
+  id: number
+  code: string
+  libelle: string
+  ordre: number | null
 }
 
 // --- Mesure Débit (Équilibrage) ---
